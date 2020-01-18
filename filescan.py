@@ -20,29 +20,6 @@ def checkstartupfolder():
             print(hash.hexdigest)
 
 
-def VirusTotalScan32up(file):
-    url = 'https://www.virustotal.com/vtapi/v2/file/scan'
-    params = {'apikey': 'keyhere'}
-    files = {'file': (file, open(file, 'rb'))}
-    response = requests.post(url, files=files, params=params)
-    jsondata = json.loads(response.text)
-    print(jsondata)
-
-
-def get_hash_report(hash, file):
-    try:
-        url = 'https://www.virustotal.com/vtapi/v2/file/report'
-        params = {'apikey': 'keyhere', 'resource': '%s' % hash}
-        response = requests.get(url, params=params)
-        jsondata = json.loads(response.text)
-        detected = jsondata['positives']
-        totalscans = jsondata['total']
-        print(str(detected) + '/' + str(totalscans))
-        return detected
-    except:
-        pass
-
-
 def add_clean_hash(hash):
     hash_list = []
     with open('{}\\clean_hash'.format(os.getcwd()), 'a+') as rx:
@@ -69,7 +46,7 @@ def scan_downloads():
         __main__.root.update()
         if '.exe' in file:
             __main__.root.update()
-            opened_file = open('C:\\users\\{}\\Downloads\\{}'.format(os.getcwd(), file), 'rb')
+            opened_file = open('C:\\users\\{}\\Downloads\\{}'.format(getpass.getuser(), file), 'rb')
             readfile = hashlib.md5(opened_file.read())
             hash = readfile.hexdigest()
             if hash not in return_download_hash_list():

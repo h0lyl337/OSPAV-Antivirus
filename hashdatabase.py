@@ -14,6 +14,7 @@ def find_hash(hash):
     SELECT hash FROM sig WHERE hash='%s'
     '''%(hash))
     try:
+        print(__main__._sql_server)
         __main__.q.put(c.fetchone()[0])
         print('done')
     except:

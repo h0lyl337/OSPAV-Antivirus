@@ -25,11 +25,16 @@ def config_set_up():
         else:
             __main__.update_text('Auto Scan Downloads Disabled')
 
+        if auto_scan_startup == '1':
+            __main__.update_text('Auto Scan Startup is active')
+        else:
+            __main__.update_text('Auto Scan Startup is Disabled')
+
         if auto_scan_process == '1':
             __main__.update_text('Auto Scan Process is active')
             threading.Thread(target=process_control.mainn, args=([__main__.root]), daemon=True).start()
         else:
-            __main__.update_text('Auto Scan Process is disabled')
+            __main__.update_text('Auto Scan Process is Disabled')
             __main__.root.update()
 
         if extention == '1':

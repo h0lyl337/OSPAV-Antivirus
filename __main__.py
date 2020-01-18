@@ -7,12 +7,15 @@ from tkinter import ttk
 import threading
 from datetime import datetime
 import subprocess
+import platform
 import signal
 import socket
 import process_control
 import network
 import config
 import filescan
+import vtotal
+import menu
 
 maindir = []
 scan_detected = []
@@ -30,6 +33,7 @@ class App:
         global textbox
         global checkbox_auto_scan_download
         global checkbox_auto_scan_process
+        global checkbox_auto_vtotal
         global update_text
         global nlistview
         global ipinput
@@ -38,32 +42,70 @@ class App:
         global checkbox_auto_scan_download_var
         global checkbox_auto_scan_startup_var
         global checkbox_auto_scan_process_var
+        global check_auto_vtotal_var
         global detected_list
         global _sql_server
         global _sql_hashdb
         global _sql_user
         global _sql_pass
         global q
+        global menubar
+
         q = queue.Queue()
         checkbox_auto_scan_download_var = BooleanVar()
         checkbox_auto_scan_startup_var = BooleanVar()
         checkbox_auto_scan_process_var = BooleanVar()
+        check_auto_vtotal_var = BooleanVar()
         detected_list = []
 
-        _sql_server = '127.0.0.1'
-        _sql_hashdb = 'hashdb'
-        _sql_user = 'root'
-        _sql_pass = 'Lovestinks90'
+        _sql_server = ''
+        _sql_hashdb = ''
+        _sql_user = ''
+        _sql_pass = ''
+
+        menubar = Menu(root)
+        menubar.config(background='black', activebackground='black')
+
+        file = Menu(menubar)
+        file.add_command(label='Get File Hash')
+        file.add_command(label='Encrypt file')
+        file.add_command(label='get file md5')
+
+        database_menu = Menu(menubar)
+        database_menu.add_command(label='Select database', command=menu._databasemenu)
+        database_menu.add_command(label='search for hash', command=menu._selecthashmenu)
+        database_menu.add_command(label='Add hash if not exist')
+
+        account_menu = Menu(menubar)
+        account_menu.add_command(label='Login')
+        account_menu.add_command(label='Logoff')
+        account_menu.add_command(label='Virus-Total API key')
+        account_menu.add_command(label='Account settings')
+
+        server_menu = Menu(menubar)
+        server_menu.add_command(label='Enable Master mode')
+        server_menu.add_command(label='Disable Master mode')
+
+        about_menu = Menu(menubar)
+        about_menu.add_command(label='Developers', command=menu.about_menu)
+
+        menubar.add_cascade(label='File', menu=file)
+        menubar.add_cascade(label='Database', menu=database_menu)
+        menubar.add_cascade(label='Account', menu=account_menu)
+        menubar.add_cascade(label='Server-Settings', menu=server_menu)
+        menubar.add_cascade(label='About', menu=about_menu)
 
         tabocontrol = ttk.Notebook()
         tabocontrol.configure()
         tab1 = tkinter.Frame(tabocontrol)
         tab1.configure(bg='#424242')
         tab2 = ttk.Frame(tabocontrol)
+        tab3 = ttk.Frame(tabocontrol)
         tab4 = ttk.Frame(tabocontrol)
         tabocontrol.add(tab1, text='Main')
         tabocontrol.add(tab2, text='Network')
-        tabocontrol.add(tab4, text='Extensions')
+        tabocontrol.add(tab3, text='Extensions')
+        tabocontrol.add(tab4, text='System-Information')
         textbox = Text(tab1, height=5, width=200, font=("Helvetica", 10))
         textbox.configure(bg='grey', state=DISABLED)
         textbox.pack(side=BOTTOM)
@@ -71,10 +113,8 @@ class App:
         network_tab_control.pack(expand=1, fill="both")
         ntab1 = ttk.Frame(network_tab_control)
         ntab2 = ttk.Frame(network_tab_control)
-        ntab3 = ttk.Frame(network_tab_control)
-        network_tab_control.add(ntab1, text='Security-Settings')
-        network_tab_control.add(ntab2, text='Local')
-        network_tab_control.add(ntab3, text='Information')
+        network_tab_control.add(ntab1, text='Firewall-Settings')
+        network_tab_control.add(ntab2, text='Information')
 
         # MAIN TAB 1 #
         tabocontrol.pack(expand=1, fill="both")
@@ -87,6 +127,11 @@ class App:
         checkbox_auto_scan_process = Checkbutton(tab1, text='Auto-Scan Process      ', variable=checkbox_auto_scan_process_var, command=check_autoscan_process_box_status)
         checkbox_auto_scan_process.pack(anchor='ne')
         checkbox_auto_scan_process.configure(bg='#424242', fg='white', activebackground='#424242')
+
+        checkbox_auto_vtotal = Checkbutton(tab1, text='Virus-Total Scan     ', variable=check_auto_vtotal_var, command=check_auto_vtotal)
+        checkbox_auto_vtotal.place(x=225, y=0)
+        checkbox_auto_vtotal.configure(bg='#424242', fg='white', activebackground='#424242')
+
         network.startblockip()
         scan_detected_label = tkinter.Label(tab1, text='         Detected:')
         scan_detected_list = tkinter.Listbox(tab1)
@@ -116,6 +161,23 @@ class App:
         buttonblockip.place(x=60, y=185)
         ipinput = Entry(ntab1)
         ipinput.place(x=0, y=210)
+
+        # SYSTEM INFORMATION
+
+        _syslabel = Label(tab4, text='System: {}'.format(platform.uname()[0]))
+        _nodelabel = Label(tab4, text='Node: {}'.format(platform.uname()[1]))
+        _releaselabel = Label(tab4, text='Release: {}'.format(platform.uname()[2]))
+        _versionlabel = Label(tab4, text='Version: {}'.format(platform.uname()[3]))
+        _machinelabel = Label(tab4, text='Machine: {}'.format(platform.uname()[4]))
+        _proclabel = Label(tab4, text='Processor: {}'.format(platform.uname()[5]))
+
+        _syslabel.pack(anchor='nw')
+        _nodelabel.pack(anchor='nw')
+        _releaselabel.pack(anchor='nw')
+        _versionlabel.pack(anchor='nw')
+        _machinelabel.pack(anchor='nw')
+        _proclabel.pack(anchor='nw')
+
 
 
 def check_autoscan_download_box_status():
@@ -148,6 +210,15 @@ def check_autoscan_process_box_status():
         t1.start()
     if checkbox_auto_scan_process_var.get() == FALSE:
         checkbox_auto_scan_process.configure(fg='white')
+
+
+def check_auto_vtotal():
+    if check_auto_vtotal_var.get() == TRUE:
+        checkbox_auto_vtotal.config(fg="green")
+        root.update()
+
+    if check_auto_vtotal_var.get() == FALSE:
+        checkbox_auto_vtotal.configure(fg='white')
 
 
 def update_text(text):
@@ -188,9 +259,11 @@ def on_exit():
 if __name__ == '__main__':
         root = tkinter.Tk()
         App(root)
-        title = Label(root, text='AssAV v1.0')
+        root.config(menu=menubar)
+        title = Label(root, text='AssAV v1.01')
         root.geometry('500x300')
-        root.title('ASS(Advance Security Software) v1.0 by H0lyL337')
+        root.resizable(False, False)
+        root.title('ASS(Advance Security Software) v1.01 by H0lyL337')
         config.config_set_up()
         root.protocol("WM_DELETE_WINDOW", on_exit)
         root.mainloop()
